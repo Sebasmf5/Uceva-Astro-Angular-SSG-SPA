@@ -30,23 +30,23 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      # 1. Instalar con npm install y compilar Astro-SSG
+      # 1. Instalar y compilar Astro-SSG
       - name: Build Astro SSG
         working-directory: ./Astro-SSG
         env:
           REPO_NAME: ${{ github.event.repository.name }}
         run: |
-          npm install
+          npm install --legacy-peer-deps
           sed -i "s|href={navLink.url}|href={\`/\${'${REPO_NAME}'}\${navLink.url}\`}|g" src/components/shared/NavLink.astro
           npx astro build --base "/${REPO_NAME}"
 
-      # 2. Instalar con npm install y compilar Client-Angular
+      # 2. Instalar (con --legacy-peer-deps) y compilar Client-Angular
       - name: Build Angular SPA
         working-directory: ./Client-Angular
         env:
           REPO_NAME: ${{ github.event.repository.name }}
         run: |
-          npm install
+          npm install --legacy-peer-deps
           npm run build -- --configuration production --base-href "/${REPO_NAME}/angular/"
           cp ./dist/Angular-Standalone-Template/browser/index.html ./dist/Angular-Standalone-Template/browser/404.html
 
