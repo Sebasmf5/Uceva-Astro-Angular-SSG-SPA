@@ -37,7 +37,6 @@ jobs:
           REPO_NAME: ${{ github.event.repository.name }}
         run: |
           npm install --legacy-peer-deps
-          sed -i "s|href={navLink.url}|href={\`/\${'${REPO_NAME}'}\${navLink.url}\`}|g" src/components/shared/NavLink.astro
           npx astro build --base "/${REPO_NAME}"
 
       # 2. Instalar (con --legacy-peer-deps) y compilar Client-Angular
