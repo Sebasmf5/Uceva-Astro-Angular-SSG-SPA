@@ -2,7 +2,7 @@ name: Deploy Astro SSG & Angular SPA to GitHub Pages
 
 on:
   push:
-    branches: ['master', 'main', 'dev']
+    branches: ['master', 'main', 'dev', 'develop']
   workflow_dispatch:
 
 permissions:
@@ -30,23 +30,23 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      # 1. Compilar Astro-SSG ajustando los enlaces del NavBar al base path del repositorio
+      # 1. Instalar con npm install y compilar Astro-SSG
       - name: Build Astro SSG
         working-directory: ./Astro-SSG
         env:
           REPO_NAME: ${{ github.event.repository.name }}
         run: |
-          npm ci
+          npm install
           sed -i "s|href={navLink.url}|href={\`/\${'${REPO_NAME}'}\${navLink.url}\`}|g" src/components/shared/NavLink.astro
           npx astro build --base "/${REPO_NAME}"
 
-      # 2. Compilar Client-Angular bajo /Uceva-Astro-Angular-SSG-SPA/angular/
+      # 2. Instalar con npm install y compilar Client-Angular
       - name: Build Angular SPA
         working-directory: ./Client-Angular
         env:
           REPO_NAME: ${{ github.event.repository.name }}
         run: |
-          npm ci
+          npm install
           npm run build -- --configuration production --base-href "/${REPO_NAME}/angular/"
           cp ./dist/Angular-Standalone-Template/browser/index.html ./dist/Angular-Standalone-Template/browser/404.html
 
