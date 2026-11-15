@@ -1,0 +1,74 @@
+name: Deploy Astro SSG & Angular SPA to GitHub Pages
+
+on:
+  push:
+    branches: ['master', 'main', 'dev']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      # 1. Compilar Astro-SSG ajustando los enlaces del NavBar al base path del repositorio
+      - name: Build Astro SSG
+        working-directory: ./Astro-SSG
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          npm ci
+          sed -i "s|href={navLink.url}|href={\`/\${'${REPO_NAME}'}\${navLink.url}\`}|g" src/components/shared/NavLink.astro
+          npx astro build --base "/${REPO_NAME}"
+
+      # 2. Compilar Client-Angular bajo /Uceva-Astro-Angular-SSG-SPA/angular/
+      - name: Build Angular SPA
+        working-directory: ./Client-Angular
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          npm ci
+          npm run build -- --configuration production --base-href "/${REPO_NAME}/angular/"
+          cp ./dist/Angular-Standalone-Template/browser/index.html ./dist/Angular-Standalone-Template/browser/404.html
+
+      # 3. Unificar ambos builds en ./deploy-dist
+      - name: Merge Astro and Angular artifacts
+        run: |
+          mkdir -p ./deploy-dist/angular
+          cp -r ./Astro-SSG/dist/* ./deploy-dist/
+          cp -r ./Client-Angular/dist/Angular-Standalone-Template/browser/* ./deploy-dist/angular/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./deploy-dist
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
